@@ -65,7 +65,7 @@ export default function SubscriptionScreen() {
     // In a real app, this would handle the subscription process
     console.log(`Subscribing to ${plan} plan`);
     // For now, just navigate back to cat screen
-    router.replace("/cat");
+    router.replace("/");
   };
 
   return (
