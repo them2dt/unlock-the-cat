@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -9,6 +9,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Purchases, {
+  PurchasesOfferings,
+  PurchasesPackage,
+} from "react-native-purchases";
 
 const SubscriptionPlan = ({
   title,
@@ -61,12 +65,35 @@ const SubscriptionPlan = ({
 );
 
 export default function SubscriptionScreen() {
-  const handleSubscribe = (plan: string) => {
-    // In a real app, this would handle the subscription process
-    console.log(`Subscribing to ${plan} plan`);
-    // For now, just navigate back to cat screen
-    router.replace("/");
+  const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
+
+  useEffect(() => {
+    getOfferings();
+  }, []);
+
+  const handleSubscribe = async (pkg: PurchasesPackage) => {
+    try {
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      if (
+        typeof customerInfo.entitlements.active["Premium Cats"] !== "undefined"
+      ) {
+        router.push("/");
+      }
+    } catch (e) {
+      console.log("📢 error", e);
+    }
   };
+
+  async function getOfferings() {
+    const offerings = await Purchases.getOfferings();
+    if (
+      offerings.current !== null &&
+      offerings.current.availablePackages.length !== 0
+    ) {
+      setOfferings(offerings);
+    }
+    console.log("📢 offerings", JSON.stringify(offerings, null, 2));
+  }
 
   return (
     <LinearGradient
@@ -111,18 +138,21 @@ export default function SubscriptionScreen() {
         </View>
 
         <View style={styles.plansContainer}>
-          <SubscriptionPlan
-            title="Monthly"
-            price="$4.99"
-            period="month"
-            features={[
-              "Unlock all cats",
-              "Remove blur effect",
-              "Monthly new cats",
-              "Basic support",
-            ]}
-            onPress={() => handleSubscribe("monthly")}
-          />
+          {offerings?.current?.availablePackages.map((pkg) => (
+            <SubscriptionPlan
+              key={pkg.identifier}
+              title={pkg.product.title}
+              price={pkg.product.priceString}
+              period={pkg.packageType.toLowerCase()}
+              features={[
+                "Unlock all cats",
+                "Remove blur effect",
+                "Monthly new cats",
+                "Basic support",
+              ]}
+              onPress={() => handleSubscribe(pkg)}
+            />
+          ))}
         </View>
 
         <View style={styles.footer}>

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -12,12 +12,26 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Purchases from "react-native-purchases";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 export default function Index() {
   // Hardcoded subscription state - change this to test different states
   const [isSubscribed, setIsSubscribed] = useState(false);
+
+  useEffect(() => {
+    getCustomerInfo();
+  }, []);
+
+  async function getCustomerInfo() {
+    const customerInfo = await Purchases.getCustomerInfo();
+    if (
+      typeof customerInfo.entitlements.active["Premium Cats"] !== "undefined"
+    ) {
+      setIsSubscribed(true);
+    }
+  }
 
   return (
     <LinearGradient
